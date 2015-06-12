@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# TODO - Prepare disk
+# Wipe out the bootloader
+#dd if=/dev/zero of=/dev/sda bs=446 count=1

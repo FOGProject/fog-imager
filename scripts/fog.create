@@ -25,6 +25,50 @@ function getDiskList() {
 
 	return $rval
 }
+
+# Gets partition table type
+# $1: Disk to scan
+# Outputs type of table
+function getTableType() {
+	local target=$1
+	local rval=""
+
+	local gdiskl=`gdisk -l $1`
+	local mbrType=`echo $gdiskl | awk '/^\ *MBR:/{print $2}'`
+#	local bsdType=`echo $gdiskl | awk '/^\ *BSD:/{print $2}'`
+#	local apmType=`echo $gdiskl | awk '/^\ *APM:/{print $2}'`
+	local gptType=`echo $gdiskl | awk '/^\ *GPT:/{print $2}'`
+
+	if [ "$gptType" == "present" ]; then
+		rval="gpt"
+	elif [ "$mbrType" == "present" ]; then
+		rval="mbr"
+	fi
+
+	return $rval
+}
+
+function saveEBR() {
+	# TODO - Save partition EBR
+}
+
+function savePartions() {
+	# TODO - If partition is extended, save EBR
+	# TODO - Else, use partclone
+}
+
+function processMbrDisk() {
+	# Save MBR manually
+	dd if=${disk} of=${destDir}/${disk##*/}.mbr.bin bs=512 count=1
+	# TODO - Save slack space between partition table and first partition?
+}
+
+function processGptDisk() {
+	# TODO - Check partition table for errors
+	# Save partition table
+	sgdisk -b ${destDir}/${disk##*/}.gpt.bin $disk
+	# TODO - Save slack space between partition table and first partition?
+}
 ### END FUNCTIONS
 
 initDest
@@ -34,12 +78,14 @@ diskList=`getDiskList`
 
 for disk in ${diskList}; do
 	echo -e "Processing $disk"
-	# TODO - Get disk label
+	# Get partition table type
+	tableType=getTableType $disk
 
-	# TODO - if mbr
-		# copy MBR
-	# TODO - if gpt
-		sgdisk -b $destDir $disk
+	if [ "$tableType" == "mbr" ]; then
+		processMbrDisk
+	elif [ "$tableType" == "gpt" ]; then
+		processGptDisk
+	fi
 
 	# TODO - For each partition on disk
 		# TODO - Save partition
