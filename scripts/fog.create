@@ -1,0 +1,46 @@
+#!/bin/bash
+
+### BEGIN VARIABLES
+shareDir="/images" # Remote share dir
+jobName="tmpJob" #
+destDir="${shareDir}/${jobName}"
+### END VARIABLES
+
+### BEGIN FUNCTIONS
+function initDest() {
+	if [ -d $destDir ]; then
+		echo -e "\nWARNING! Destination directory $destDir exists!"
+		echo "Drive(s) will not be copied!"
+		exit 1
+	else
+		mkdir -p $destDir
+	fi
+}
+
+function getDiskList() {
+	local rval=`lsblk -dpno KNAME,MAJ:MIN -x KNAME | awk -F'[ :]+' '{
+	if ($2 == "3" || $2 == "8" || $2 == "9")
+		print $1
+	}'`
+
+	return $rval
+}
+### END FUNCTIONS
+
+initDest
+
+# Get all disks
+diskList=`getDiskList`
+
+for disk in ${diskList}; do
+	echo -e "Processing $disk"
+	# TODO - Get disk label
+
+	# TODO - if mbr
+		# copy MBR
+	# TODO - if gpt
+		sgdisk -b $destDir $disk
+
+	# TODO - For each partition on disk
+		# TODO - Save partition
+done
