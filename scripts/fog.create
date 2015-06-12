@@ -1,10 +1,17 @@
 #!/bin/bash
 
 ### BEGIN VARIABLES
+SCRIPT_DIR=$(cd -P `dirname ${BASH_SOURCE[0]}` && pwd)
 shareDir="/images" # Remote share dir
 jobName="tmpJob" #
 destDir="${shareDir}/${jobName}"
 ### END VARIABLES
+
+### BEGIN SOURCE VARIABLES
+if [ "$SOURCED_GPT_GUID" == "true" ]; then
+	. ${SCRIPT_DIR}/lib/gpt.guid
+fi
+### END SOURCE VARIABLES`
 
 ### BEGIN FUNCTIONS
 function initDest() {
@@ -31,42 +38,94 @@ function getDiskList() {
 # Outputs type of table
 function getTableType() {
 	local target=$1
-	local rval=""
 
-	local gdiskl=`gdisk -l $1`
-	local mbrType=`echo $gdiskl | awk '/^\ *MBR:/{print $2}'`
-#	local bsdType=`echo $gdiskl | awk '/^\ *BSD:/{print $2}'`
-#	local apmType=`echo $gdiskl | awk '/^\ *APM:/{print $2}'`
-	local gptType=`echo $gdiskl | awk '/^\ *GPT:/{print $2}'`
+	local sfdiskd=`sfdisk -d $target`
+	local tableType=`echo $sfdiskd | awk /^label:\ /'{print $2}'`
 
-	if [ "$gptType" == "present" ]; then
-		rval="gpt"
-	elif [ "$mbrType" == "present" ]; then
-		rval="mbr"
-	fi
-
-	return $rval
+	return $tableType
 }
 
-function saveEBR() {
-	# TODO - Save partition EBR
+# TODO - Probably is just one function...
+# $1: Disk to save partitions from
+# $2: Disk number
+function saveMbrPartions() {
+	local target=$1
+	local number=$2
+	local partDataList=`sfdisk -d $target | grep start=`
+	
+	for partData in ${partDataList}; do
+		local partName=`echo $partData | awk -F'[ :,=]+' '{print $1}'`
+		local partID=`echo $partData | awk -F'[ :,=]+' '{print $7}'`
+		
+		# If partition is extended, save EBR
+		if [ "$partID" == "5" ] || [ "$partID" == "f"]; then
+			echo "Extended partition detected. This does nothing."	
+		else
+			# Check for valid file systems
+			local partFs=`blkid -po udev $partName \
+				| awk -F'=' /ID_FS_TYPE=/'{print $2}'`
+			local partFile="${destDir}/d${number}p${partName##*[a-z]}.img"
+
+			mkfifo /tmp/pigz
+			pigz $PGIZ_COMP < /tmp/pigz | split -a 3 -d -b 200m - ${partFile}. &
+
+			# Use partclone or save swap UUID
+			if [ "$partFs" == "ntfs" ]; then
+				partclone.ntfs -c -s $partName -O /tmp/pigz -N -f 1 2 >> /tmp/partclone.log
+			elif [ "$partFs" == "vfat" ]; then
+				partclone.fat -c -s $partName -O /tmp/pigz -N -f 1 2 >> /tmp/partclone.log
+			elif [ "$partFs" == "hfsplus" ]; then
+				partclone.hfsp -c -s $partName -O /tmp/pigz -N -f 1 2 >> /tmp/partclone.log
+			elif [ "$partFs" == "swap" ]; then
+				local swapFile="${destDir}/d${number}.swap"
+				blkid -s UUID ${partName} | cut -d\" -f2 > $swapFile
+			elif [ "$partFs" == "ext4" ]; then
+				partclone.extfs -c -s $partName -O /tmp/pigz -N -f 1 2 >> /tmp/partclone.log
+			elif [ "$partFs" == "ext3" ]; then
+				partclone.extfs -c -s $partName -O /tmp/pigz -N -f 1 2 >> /tmp/partclone.log
+			elif [ "$partFs" == "ext2" ]; then
+				partclone.extfs -c -s $partName -O /tmp/pigz -N -f 1 2 >> /tmp/partclone.log
+			else
+				echo "FATAL: Unsupported partition "$partFs" detected!"
+				exit 2
+			fi
+			rm /tmp/pigz
+		fi
+	done
 }
 
-function savePartions() {
-	# TODO - If partition is extended, save EBR
-	# TODO - Else, use partclone
+# $1: Disk to save partitions from
+# $2: Disk number
+function saveGptPartions() {
+	local target=$1
+	local number=$2
+	local sfdiskd=`sfdisk -d $target`
+	
+	# TODO - Use partclone
 }
 
+# $1: Disk to process
+# $2: Disk number
 function processMbrDisk() {
+	local target=$1
+	local number=$2
+	local destFile="${destDir}/d${number}.mbr.bin"
+
 	# Save MBR manually
-	dd if=${disk} of=${destDir}/${disk##*/}.mbr.bin bs=512 count=1
+	dd if=$target of=$destFile bs=512 count=1
 	# TODO - Save slack space between partition table and first partition?
 }
 
+# $1: Disk to process
+# $2: Disk number
 function processGptDisk() {
+	local target=$1
+	local number=$2
+	local destFile="${destDir}/d${number}.gpt.bin"
+
 	# TODO - Check partition table for errors
 	# Save partition table
-	sgdisk -b ${destDir}/${disk##*/}.gpt.bin $disk
+	sgdisk -b $destFile $target
 	# TODO - Save slack space between partition table and first partition?
 }
 ### END FUNCTIONS
@@ -76,17 +135,18 @@ initDest
 # Get all disks
 diskList=`getDiskList`
 
+diskCount=1
 for disk in ${diskList}; do
 	echo -e "Processing $disk"
 	# Get partition table type
 	tableType=getTableType $disk
 
-	if [ "$tableType" == "mbr" ]; then
-		processMbrDisk
+	if [ "$tableType" == "dos" ]; then
+		processMbrDisk $disk $diskCount
+		saveMbrPartitions $disk $diskCount
 	elif [ "$tableType" == "gpt" ]; then
-		processGptDisk
+		processGptDisk $disk $diskCount
+		saveGptPartitions $disk $diskCount
 	fi
 
-	# TODO - For each partition on disk
-		# TODO - Save partition
 done
