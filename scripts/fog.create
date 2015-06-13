@@ -31,7 +31,7 @@ function getDiskList() {
 		print $1
 	}'`
 
-	return $rval
+	echo "$rval"
 }
 
 # Gets partition table type
@@ -43,7 +43,7 @@ function getTableType() {
 	local sfdiskd=`sfdisk -d $target`
 	local tableType=`echo $sfdiskd | awk /^label:\ /'{print $2}'`
 
-	return $tableType
+	echo "$tableType"
 }
 
 # $1: Disk to save partitions from
@@ -58,7 +58,7 @@ function savePartitions() {
 		local partID=`echo $partData | awk -F'[ :,=]+' '{print $7}'`
 		
 		# If partition is extended, save EBR
-		if [ "$partID" == "5" ] || [ "$partID" == "f"]; then
+		if [ "$partID" == "5" ] || [ "$partID" == "f" ]; then
 			echo "Extended partition detected. This does nothing at this time."	
 		else
 			# Check for valid file systems
