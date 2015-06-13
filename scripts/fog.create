@@ -48,7 +48,7 @@ function getTableType() {
 
 # $1: Disk to save partitions from
 # $2: Disk number
-function savePartions() {
+function savePartitions() {
 	local target=$1
 	local number=$2
 	local partDataList=`sfdisk -d $target | grep start=`
