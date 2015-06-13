@@ -8,9 +8,10 @@ destDir="${shareDir}/${jobName}"
 ### END VARIABLES
 
 ### BEGIN SOURCE VARIABLES
-if [ "$SOURCED_GPT_GUID" == "true" ]; then
-	. ${SCRIPT_DIR}/lib/gpt.guid
-fi
+# TODO - Save this for the resizable partitioning
+#if [ "$SOURCED_GPT_GUID" == "true" ]; then
+#	. ${SCRIPT_DIR}/lib/gpt.guid
+#fi
 ### END SOURCE VARIABLES`
 
 ### BEGIN FUNCTIONS
@@ -45,10 +46,9 @@ function getTableType() {
 	return $tableType
 }
 
-# TODO - Probably is just one function...
 # $1: Disk to save partitions from
 # $2: Disk number
-function saveMbrPartions() {
+function savePartions() {
 	local target=$1
 	local number=$2
 	local partDataList=`sfdisk -d $target | grep start=`
@@ -59,7 +59,7 @@ function saveMbrPartions() {
 		
 		# If partition is extended, save EBR
 		if [ "$partID" == "5" ] || [ "$partID" == "f"]; then
-			echo "Extended partition detected. This does nothing."	
+			echo "Extended partition detected. This does nothing at this time."	
 		else
 			# Check for valid file systems
 			local partFs=`blkid -po udev $partName \
@@ -79,11 +79,7 @@ function saveMbrPartions() {
 			elif [ "$partFs" == "swap" ]; then
 				local swapFile="${destDir}/d${number}.swap"
 				blkid -s UUID ${partName} | cut -d\" -f2 > $swapFile
-			elif [ "$partFs" == "ext4" ]; then
-				partclone.extfs -c -s $partName -O /tmp/pigz -N -f 1 2 >> /tmp/partclone.log
-			elif [ "$partFs" == "ext3" ]; then
-				partclone.extfs -c -s $partName -O /tmp/pigz -N -f 1 2 >> /tmp/partclone.log
-			elif [ "$partFs" == "ext2" ]; then
+			elif [[ "$partFs" =~ ^ext[234] ]]; then
 				partclone.extfs -c -s $partName -O /tmp/pigz -N -f 1 2 >> /tmp/partclone.log
 			else
 				echo "FATAL: Unsupported partition "$partFs" detected!"
@@ -92,16 +88,6 @@ function saveMbrPartions() {
 			rm /tmp/pigz
 		fi
 	done
-}
-
-# $1: Disk to save partitions from
-# $2: Disk number
-function saveGptPartions() {
-	local target=$1
-	local number=$2
-	local sfdiskd=`sfdisk -d $target`
-	
-	# TODO - Use partclone
 }
 
 # $1: Disk to process
@@ -143,10 +129,11 @@ for disk in ${diskList}; do
 
 	if [ "$tableType" == "dos" ]; then
 		processMbrDisk $disk $diskCount
-		saveMbrPartitions $disk $diskCount
 	elif [ "$tableType" == "gpt" ]; then
 		processGptDisk $disk $diskCount
-		saveGptPartitions $disk $diskCount
 	fi
+	savePartitions $disk $diskCount
 
 done
+
+echo -e "Image save complete.\n"
