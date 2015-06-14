@@ -52,11 +52,15 @@ function savePartitions() {
 	local target=$1
 	local number=$2
 	local partDataList=`sfdisk -d $target | grep start=`
-	
+
+	# Set IFS to newline for loop
+	ORIG_IFS=$IFS
+	IFS=$'\n'
 	for partData in ${partDataList}; do
 		local partName=`echo $partData | awk -F'[ :,=]+' '{print $1}'`
 		local partID=`echo $partData | awk -F'[ :,=]+' '{print $7}'`
 		
+		echo "Processing partition \"$partName\""
 		# If partition is extended, save EBR
 		if [ "$partID" == "5" ] || [ "$partID" == "f" ]; then
 			echo "Extended partition detected. This does nothing at this time."	
@@ -71,16 +75,16 @@ function savePartitions() {
 
 			# Use partclone or save swap UUID
 			if [ "$partFs" == "ntfs" ]; then
-				partclone.ntfs -c -s $partName -O /tmp/pigz -N -f 1 2 >> /tmp/partclone.log
+				partclone.ntfs -c -s $partName -O /tmp/pigz -N -f 1 2>> /tmp/partclone.log
 			elif [ "$partFs" == "vfat" ]; then
-				partclone.fat -c -s $partName -O /tmp/pigz -N -f 1 2 >> /tmp/partclone.log
+				partclone.fat -c -s $partName -O /tmp/pigz -N -f 1 2>> /tmp/partclone.log
 			elif [ "$partFs" == "hfsplus" ]; then
-				partclone.hfsp -c -s $partName -O /tmp/pigz -N -f 1 2 >> /tmp/partclone.log
+				partclone.hfsp -c -s $partName -O /tmp/pigz -N -f 1 2>> /tmp/partclone.log
 			elif [ "$partFs" == "swap" ]; then
 				local swapFile="${destDir}/d${number}.swap"
 				blkid -s UUID ${partName} | cut -d\" -f2 > $swapFile
 			elif [[ "$partFs" =~ ^ext[234] ]]; then
-				partclone.extfs -c -s $partName -O /tmp/pigz -N -f 1 2 >> /tmp/partclone.log
+				partclone.extfs -c -s $partName -O /tmp/pigz -N -f 1 2>> /tmp/partclone.log
 			else
 				echo "FATAL: Unsupported partition "$partFs" detected!"
 				exit 2
@@ -88,6 +92,7 @@ function savePartitions() {
 			rm /tmp/pigz
 		fi
 	done
+	IFS=$ORIG_IFS
 }
 
 # $1: Disk to process
@@ -125,7 +130,7 @@ diskCount=1
 for disk in ${diskList}; do
 	echo -e "Processing $disk"
 	# Get partition table type
-	tableType=getTableType $disk
+	tableType=`getTableType $disk`
 
 	if [ "$tableType" == "dos" ]; then
 		processMbrDisk $disk $diskCount
