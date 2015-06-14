@@ -71,7 +71,8 @@ function savePartitions() {
 			local partFile="${destDir}/d${number}p${partName##*[a-z]}.img"
 
 			mkfifo /tmp/pigz
-			pigz $PGIZ_COMP < /tmp/pigz | split -a 3 -d -b 200m - ${partFile}. &
+			# This supports image sizes up to 10.2 TB
+			pigz $PGIZ_COMP < /tmp/pigz | split -a 4 -d -b 1024m - ${partFile}. &
 
 			# Use partclone or save swap UUID
 			if [ "$partFs" == "ntfs" ]; then
@@ -89,6 +90,7 @@ function savePartitions() {
 				echo "FATAL: Unsupported partition "$partFs" detected!"
 				exit 2
 			fi
+			mv ${partFile}{.000,} 2>/dev/null
 			rm /tmp/pigz
 		fi
 	done

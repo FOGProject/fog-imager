@@ -1,5 +1,95 @@
 #!/bin/bash
 
+### BEGIN VARIABLES
+SCRIPT_DIR=$(cd -P `dirname ${BASH_SOURCE[0]}` && pwd)
+shareDir="/images" # Remote share dir
+jobName="tmpJob"
+srcDir="${shareDir}/${jobName}"
+### END VARIABLES
+
+### BEGIN SOURCE VARIABLES
+# TODO - Save this for the resizable partitioning
+#if [ "$SOURCED_GPT_GUID" == "true" ]; then
+#   . ${SCRIPT_DIR}/lib/gpt.guid
+#fi
+### END SOURCE VARIABLES
+
+### BEGIN FUNCTIONS
+function initSrc() {
+	if [ ! -d "$srcDir" ]; then
+		echo -e "\nFATAL! Source directory \"${srcDir}\" does not exist!"
+		echo "Imaging process cannot continue!"
+		exit 1
+	fi
+	# TODO - Turn into function to check any disks.
+	if [ ! -f ${srcDir}/d1.*.bin ]; then
+		echo -e "\nFATAL! No partition table detected in source directory!"
+		echo "Imaging process cannot continue!"
+		exit 2
+	fi
+	if [ ! -f "${srcDir}/d1p1.img" ]; then
+		echo -e "\nFATAL! No initial image file detected in source directory!"
+		echo "Imaging process cannot continue!"
+		exit 3
+	fi
+}
+
+function getDiskList() {
+	local rval=`lsblk -dpno KNAME,MAJ:MIN -x KNAME | awk -F'[ :]+' '{
+		if ($2 == "3" || $2 == "8" || $2 == "9")
+			print $1
+		}'`
+
+	echo "$rval"
+}
+
+
+# $1: Partition table binary file name
+# $2: Partition target to deploy to
+function deployPartTable() {
+	local partTable=$1
+	local partName=$2
+
+	if [[ "$partTable" =~ ^.*\.mbr\.bin ]]; then
+		# TODO - Perform MBR restore
+	elif [[ "$partTable" =~ ^.*\.gpt\.bin ]]; then
+		# TODO - Perform GPT restore
+	fi
+}
+
+# $1: Partition image base file name
+# $2: Partition target to deploy to
+function deployPartition() {
+	local partImg=$1
+	local partName=$2
+
+	mkfifo /tmp/pigz
+	cat ${partImg} > /tmp/pigz
+
+	pigz -d -c < /tmp/pigz | \
+		partclone.restore --ignore_crc -O $partName -N -f 1 \
+		2>>/tmp/partclone.log
+	
+	rm /tmp/pigz
+}
+### END FUNCTIONS
+
 # TODO - Prepare disk
 # Wipe out the bootloader
 #dd if=/dev/zero of=/dev/sda bs=446 count=1
+
+initSrc
+
+diskList=`getDiskList`
+
+diskCount=1
+for disk in ${diskList}; do
+	# TODO - Wipe partition table
+	# TODO - deployPartTable
+	# TODO - Get list of partitions on disk
+	partCount=1
+	# TODO - Loop through partitions
+		# TODO - deployPartition
+done
+
+echo -e "Image deploy complete.\n"
