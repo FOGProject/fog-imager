@@ -17,7 +17,7 @@ destDir="${shareDir}/${jobName}"
 ### BEGIN FUNCTIONS
 function initDest() {
 	if [ -d $destDir ]; then
-		echo -e "\nWARNING! Destination directory $destDir exists!"
+		echo -e "\nFATAL! Destination directory \"${destDir}\" exists!"
 		echo "Drive(s) will not be copied!"
 		exit 1
 	else
