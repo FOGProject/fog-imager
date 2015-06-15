@@ -22,7 +22,7 @@ function initSrc() {
 		exit 1
 	fi
 	# TODO - Turn into function to check any disks.
-	if [ ! -f ${srcDir}/d1.*.bin ]; then
+	if [ ! -f "${srcDir}/d1.mbr" ] && [ ! -f "${scrDir}/d1.gpt" ]; then
 		echo -e "\nFATAL! No partition table detected in source directory!"
 		echo "Imaging process cannot continue!"
 		exit 2
@@ -43,18 +43,37 @@ function getDiskList() {
 	echo "$rval"
 }
 
+# $1: Target disk
+function probeParts() {
+	local target=$1
 
-# $1: Partition table binary file name
-# $2: Partition target to deploy to
-function deployPartTable() {
-	local partTable=$1
-	local partName=$2
-
-	if [[ "$partTable" =~ ^.*\.mbr\.bin ]]; then
-		# TODO - Perform MBR restore
-	elif [[ "$partTable" =~ ^.*\.gpt\.bin ]]; then
-		# TODO - Perform GPT restore
+	udevadm settle
+	blockdev --rereadpt $target > /dev/null 2>&1
+	if [ "$?" != "0" ]; then
+		echo "FATAL! Unable to read back partitions!"
+		exit 4
 	fi
+}
+
+# $1: Partition target to deploy to
+# $2: Disk number
+function deployPartTable() {
+	local diskName=$1
+	local diskNum=$2
+
+	# Wipe partition table
+	# TODO - Consider wiping out slack space before first partition
+	dd if=/dev/zero of=$disk bs=512 count=1 2>/dev/null
+
+	if [ -f "${srcDir}/d${diskNum}.mbr" ]; then
+		local tableFile=${srcDir}/d${diskNum}.mbr
+	elif [ -f "${srcDir}/d${diskNum}.gpt" ]; then
+		local tableFile=${srcDir}/d${diskNum}.gpt
+	fi
+	# Restore partition table
+	sfdisk $diskName < $tableFile
+	# TODO - Handle post-MBR slack space?
+	probeParts $diskName
 }
 
 # $1: Partition image base file name
@@ -72,11 +91,20 @@ function deployPartition() {
 	
 	rm /tmp/pigz
 }
-### END FUNCTIONS
 
-# TODO - Prepare disk
-# Wipe out the bootloader
-#dd if=/dev/zero of=/dev/sda bs=446 count=1
+# $1: Target disk
+# $2: Disk number
+function processPartitions() {
+	local target=$1
+	local number=$2
+	local partDataList=`sfdisk -d $target | awk /start=/'{print $1}'`
+	
+	for partName in ${partDataList}; do
+		echo "Deploying $partName"
+		deployPartition ${srcDir}/d${number}p${partName##*[a-z]}.img ${partName}
+	done
+}
+### END FUNCTIONS
 
 initSrc
 
@@ -84,12 +112,9 @@ diskList=`getDiskList`
 
 diskCount=1
 for disk in ${diskList}; do
-	# TODO - Wipe partition table
-	# TODO - deployPartTable
-	# TODO - Get list of partitions on disk
-	partCount=1
-	# TODO - Loop through partitions
-		# TODO - deployPartition
+	echo "Processing disk $disk"
+	deployPartTable $disk $diskCount
+	processPartitions $disk $diskCount
 done
 
 echo -e "Image deploy complete.\n"

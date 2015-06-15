@@ -99,27 +99,24 @@ function savePartitions() {
 
 # $1: Disk to process
 # $2: Disk number
-function processMbrDisk() {
+# $3: Disk partitioning type
+function savePartTable() {
 	local target=$1
 	local number=$2
-	local destFile="${destDir}/d${number}.mbr.bin"
+	local label=$3
 
-	# Save MBR manually
-	dd if=$target of=$destFile bs=512 count=1
-	# TODO - Save slack space between partition table and first partition?
-}
+	if [ "$label" == "dos" ]; then
+		local destFile="${destDir}/d${number}.mbr"
+	elif [ "$label" == "gpt" ]; then
+		local destFile="${destDir}/d${number}.gpt"
+	else
+		echo -e "FATAL! Unable to save partition table on ${target}.\n"
+		exit 3
+	fi
 
-# $1: Disk to process
-# $2: Disk number
-function processGptDisk() {
-	local target=$1
-	local number=$2
-	local destFile="${destDir}/d${number}.gpt.bin"
-
-	# TODO - Check partition table for errors
 	# Save partition table
 	sgdisk -b $destFile $target
-	# TODO - Save slack space between partition table and first partition?
+	# TODO - Save post-MBR slack space?
 }
 ### END FUNCTIONS
 
@@ -134,11 +131,7 @@ for disk in ${diskList}; do
 	# Get partition table type
 	tableType=`getTableType $disk`
 
-	if [ "$tableType" == "dos" ]; then
-		processMbrDisk $disk $diskCount
-	elif [ "$tableType" == "gpt" ]; then
-		processGptDisk $disk $diskCount
-	fi
+	savePartTable $disk $diskCount $tableType
 	savePartitions $disk $diskCount
 
 done
