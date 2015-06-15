@@ -47,6 +47,24 @@ function getTableType() {
 	echo "$tableType"
 }
 
+# $1: Partition name
+# $2: Filesystem type
+# $3: Destination file
+function runPartClone() {
+	local srcPart=$1
+	local fs=$2
+	local dstFile=$3
+
+	mkfifo /tmp/pigz
+	# This supports image sizes up to 10.2 TB
+	pigz -${PGIZ_COMP} < /tmp/pigz | split -a 4 -d -b 1024m - ${dstFile}. &
+
+	partclone.$fs -c -s $srcPart -O /tmp/pigz -N -f 1
+	
+	mv ${partFile}{.0000,} 2>/dev/null
+	rm /tmp/pigz
+}
+
 # $1: Disk to save partitions from
 # $2: Disk number
 function savePartitions() {
@@ -71,28 +89,22 @@ function savePartitions() {
 				| awk -F'=' /ID_FS_TYPE=/'{print $2}'`
 			local partFile="${destDir}/d${number}p${partName##*[a-z]}.img"
 
-			mkfifo /tmp/pigz
-			# This supports image sizes up to 10.2 TB
-			pigz -${PGIZ_COMP} < /tmp/pigz | split -a 4 -d -b 1024m - ${partFile}. &
-
 			# Use partclone or save swap UUID
 			if [ "$partFs" == "ntfs" ]; then
-				partclone.ntfs -c -s $partName -O /tmp/pigz -N -f 1 2>> /tmp/partclone.log
+				runPartClone $partName ntfs $partFile
 			elif [ "$partFs" == "vfat" ]; then
-				partclone.fat -c -s $partName -O /tmp/pigz -N -f 1 2>> /tmp/partclone.log
+				runPartClone $partName vfat $partFile
 			elif [ "$partFs" == "hfsplus" ]; then
-				partclone.hfsp -c -s $partName -O /tmp/pigz -N -f 1 2>> /tmp/partclone.log
+				runPartClone $partName hfsplus $partFile
+			elif [[ "$partFs" =~ ^ext[234]$ ]]; then
+				runPartClone $partName extfs $partFile
 			elif [ "$partFs" == "swap" ]; then
 				local swapFile="${destDir}/d${number}.swap"
 				blkid -s UUID ${partName} | cut -d\" -f2 > $swapFile
-			elif [[ "$partFs" =~ ^ext[234] ]]; then
-				partclone.extfs -c -s $partName -O /tmp/pigz -N -f 1 2>> /tmp/partclone.log
 			else
 				echo "FATAL: Unsupported partition "$partFs" detected!"
 				exit 2
 			fi
-			mv ${partFile}{.0000,} 2>/dev/null
-			rm /tmp/pigz
 		fi
 	done
 	IFS=$ORIG_IFS

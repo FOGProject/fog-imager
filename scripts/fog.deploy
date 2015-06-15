@@ -86,8 +86,7 @@ function deployPartition() {
 	cat ${partImg} > /tmp/pigz &
 
 	pigz -d -c < /tmp/pigz | \
-		partclone.restore --ignore_crc -O $partName -N -f 1 \
-		2>>/tmp/partclone.log
+		partclone.restore --ignore_crc -O $partName -N -f 1
 	
 	rm /tmp/pigz
 }
