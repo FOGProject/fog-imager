@@ -90,7 +90,7 @@ function savePartitions() {
 				echo "FATAL: Unsupported partition "$partFs" detected!"
 				exit 2
 			fi
-			mv ${partFile}{.000,} 2>/dev/null
+			mv ${partFile}{.0000,} 2>/dev/null
 			rm /tmp/pigz
 		fi
 	done
