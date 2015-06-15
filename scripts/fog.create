@@ -5,6 +5,7 @@ SCRIPT_DIR=$(cd -P `dirname ${BASH_SOURCE[0]}` && pwd)
 shareDir="/images" # Remote share dir
 jobName="tmpJob" #
 destDir="${shareDir}/${jobName}"
+PGIZ_COMP=5 # Compression value of 0-9 (5 is usually best)
 ### END VARIABLES
 
 ### BEGIN SOURCE VARIABLES
@@ -72,7 +73,7 @@ function savePartitions() {
 
 			mkfifo /tmp/pigz
 			# This supports image sizes up to 10.2 TB
-			pigz $PGIZ_COMP < /tmp/pigz | split -a 4 -d -b 1024m - ${partFile}. &
+			pigz -${PGIZ_COMP} < /tmp/pigz | split -a 4 -d -b 1024m - ${partFile}. &
 
 			# Use partclone or save swap UUID
 			if [ "$partFs" == "ntfs" ]; then
