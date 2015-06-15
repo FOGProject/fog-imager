@@ -117,25 +117,26 @@ function savePartTable() {
 	local target=$1
 	local number=$2
 	local label=$3
+	local sfdiskFile=${destDir}/d${number}.partitions
 
 	if [ "$label" == "dos" ]; then
-		local destFile="${destDir}/d${number}.mbr"
+		local tableFile="${destDir}/d${number}.mbr"
 	elif [ "$label" == "gpt" ]; then
-		local destFile="${destDir}/d${number}.gpt"
+		local tableFile="${destDir}/d${number}.gpt"
 	else
 		echo -e "FATAL! Unable to save partition table on ${target}.\n"
 		exit 3
 	fi
 
 	# Save partition table
-	sfdisk -d $target > $destFile
-	# Save post-MBR slack space (this is sometimes used)
-	if [ "$label" == "dos" ]; then
-		local firstSector=`sfdisk -d $target | \
-			 awk /start=\ *[1-9]/'{print $4+0}' | sort -n | head -1`
+	sfdisk -d $target > $sfdiskFile
 
-		dd if=$target of=${destFile}.slack bs=512 count=${firstSector} skip=1
-	fi
+	# Save raw partition table and slack space
+	# (This insures we have all bootstrap code.)
+	local firstSector=`sfdisk -d $target | \
+		 awk /start=\ *[1-9]/'{print $4+0}' | sort -n | head -1`
+
+	dd if=$target of=${tableFile} bs=512 count=${firstSector}
 }
 ### END FUNCTIONS
 
