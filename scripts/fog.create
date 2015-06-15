@@ -115,7 +115,7 @@ function savePartTable() {
 	fi
 
 	# Save partition table
-	sgdisk -b $destFile $target
+	sfdisk -d $target > $destFile
 	# TODO - Save post-MBR slack space?
 }
 ### END FUNCTIONS
