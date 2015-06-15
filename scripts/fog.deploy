@@ -77,8 +77,6 @@ function deployPartTable() {
 	# Restore raw partition table
 	dd if=$tableFile of=$diskName bs=512 count=${firstSector}
 
-	# Restore partition table entries
-	sfdisk $diskName < $sfdiskFile
 	probeParts $diskName
 }
 
