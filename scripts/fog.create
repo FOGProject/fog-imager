@@ -129,7 +129,13 @@ function savePartTable() {
 
 	# Save partition table
 	sfdisk -d $target > $destFile
-	# TODO - Save post-MBR slack space?
+	# Save post-MBR slack space (this is sometimes used)
+	if [ "$label" == "dos" ]; then
+		local firstSector=`sfdisk -d $target | \
+			 awk /start=\ *[1-9]/'{print $4+0}' | sort -n | head -1`
+
+		dd if=$target of=${destFile}.slack bs=512 count=${firstSector} skip=1
+	fi
 }
 ### END FUNCTIONS
 

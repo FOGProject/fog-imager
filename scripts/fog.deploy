@@ -60,6 +60,7 @@ function probeParts() {
 function deployPartTable() {
 	local diskName=$1
 	local diskNum=$2
+	local isMbr=0
 
 	# Wipe partition table
 	# TODO - Consider wiping out slack space before first partition
@@ -67,13 +68,22 @@ function deployPartTable() {
 
 	if [ -f "${srcDir}/d${diskNum}.mbr" ]; then
 		local tableFile=${srcDir}/d${diskNum}.mbr
+		isMbr=1
 	elif [ -f "${srcDir}/d${diskNum}.gpt" ]; then
 		local tableFile=${srcDir}/d${diskNum}.gpt
 	fi
 	# Restore partition table
 	sfdisk $diskName < $tableFile
-	# TODO - Handle post-MBR slack space?
 	probeParts $diskName
+	
+	# Handle post-MBR slack space
+	if [ "$isMbr" == "1" ] && [ -f "${srcDir}/d${diskNum}.mbr.slack" ]; then
+		local firstSector=`sfdisk -d $diskName | \
+			awk /start=\ *[1-9]/'{print $4+0}' | sort -n | head -1`
+
+		dd if=${srcDir}/d${diskNum}.mbr.slack of=$diskName bs=512 \
+			count=${firstSector} seek=1
+	fi
 }
 
 # $1: Partition image base file name
