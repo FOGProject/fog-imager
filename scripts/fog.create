@@ -35,6 +35,7 @@ function initDest() {
 			exit 1
 		fi
 	fi
+	rm -rf $destDir 2>/dev/null
 	mkdir -p $destDir
 }
 
