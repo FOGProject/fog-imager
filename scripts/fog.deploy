@@ -61,13 +61,18 @@ function initSrc() {
 			echo "Imaging process cannot continue!"
 			exit 104
 		fi
-		local partList=`cat $partFile | awk /start=/'{print $1}'`
+		local partList=`cat $partFile | grep start=`
 		for part in $partList; do
-			local partFile="d${dnum}p${part##*[a-z]}.img"
-			if [ ! -f "${srcDir}/$partFile" ]; then
-				echo -e "\nFATAL! No image file detected for ${partFile}!"
-				echo "Imaging process cannot continue!"
-				exit 105
+			local partName=`echo $part | awk -F'[ :,=]+' '{print $1}'`
+			local partID=`echo $part | awk -F'[ :,=]+' '{print $7}'`
+
+			local partFile="d${dnum}p${partName##*[a-z]}.img"
+			if [ partID != "5" ] && [ $partID != "82" ]; then
+				if [ ! -f "${srcDir}/$partFile" ]; then
+					echo -e "\nFATAL! No image file detected for ${partFile}!"
+					echo "Imaging process cannot continue!"
+					exit 105
+				fi
 			fi
 		done
 	done
