@@ -16,27 +16,66 @@ srcDir="${shareDir}/${jobName}"
 
 ### BEGIN FUNCTIONS
 function initSrc() {
+	local diskCount=`lsblk -dpno MAJ:MIN | cut -d: -f1 | grep "^[ ]*[38]$" | \
+		wc -l`
+
 	if [ ! -d "$srcDir" ]; then
 		echo -e "\nFATAL! Source directory \"${srcDir}\" does not exist!"
 		echo "Imaging process cannot continue!"
-		exit 1
+		exit 101
 	fi
-	# TODO - Turn into function to check any disks.
-	if [ ! -f "${srcDir}/d1.mbr" ] && [ ! -f "${scrDir}/d1.gpt" ]; then
-		echo -e "\nFATAL! No partition table detected in source directory!"
+
+	# Confirm all available disk data can image successfully.
+	local notDone=1
+	local imgCount=1
+	while [ "$notDone" == "1" ]; do
+		local mbrFile="${srcDir}/d${imgCount}.mbr"
+		local gptFile="${srcDir}/d${imgCount}.gpt"
+		if [ ! -f "$mbrFile" ] && [ ! -f "$gptFile" ]; then
+			# We need at least one disk to image
+			if [ "$imgCount" == "1" ]; then
+				echo -e "\nFATAL! No partition table for disk ${imgCount}!"
+				echo "Imaging process cannot continue!"
+				exit 102
+			else
+				notDone=0
+				imgCount=$(($imgCount - 1))
+			fi
+		else
+			imgCount=$(($imgCount + 1))
+		fi
+	done
+
+	# Ensure there are enough disks to image to.
+	if [ "$imgCount" -gt "$diskCount" ]; then
+		echo -e "\nFATAL! Not enough disks on target system!"
 		echo "Imaging process cannot continue!"
-		exit 2
+		exit 103
 	fi
-	if [ ! -f "${srcDir}/d1p1.img" ]; then
-		echo -e "\nFATAL! No initial image file detected in source directory!"
-		echo "Imaging process cannot continue!"
-		exit 3
-	fi
+
+	for dnum in `seq $imgCount`; do
+		local partFile="${srcDir}/d${dnum}.partitions"
+
+		if [ ! -f "$partFile" ]; then
+			echo -e "\nFATAL! No partition dump detected for disk ${dnum}!"
+			echo "Imaging process cannot continue!"
+			exit 104
+		fi
+		local partList=`cat $partFile | awk /start=/'{print $1}'`
+		for part in $partList; do
+			local partFile="d${dnum}p${part##*[a-z]}.img"
+			if [ ! -f "${srcDir}/$partFile" ]; then
+				echo -e "\nFATAL! No image file detected for ${partFile}!"
+				echo "Imaging process cannot continue!"
+				exit 105
+			fi
+		done
+	done
 }
 
 function getDiskList() {
 	local rval=`lsblk -dpno KNAME,MAJ:MIN -x KNAME | awk -F'[ :]+' '{
-		if ($2 == "3" || $2 == "8" || $2 == "9")
+		if ($2 == "3" || $2 == "8")
 			print $1
 		}'`
 
@@ -124,7 +163,8 @@ function processPartitions() {
 			fi
 		else
 			echo "Deploying $partName"
-			deployPartition ${srcDir}/d${number}p${partName##*[a-z]}.img ${partName}
+			deployPartition ${srcDir}/d${number}p${partName##*[a-z]}.img \
+				${partName}
 		fi
 	done
 	IFS=$ORIG_IFS
