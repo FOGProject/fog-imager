@@ -1,0 +1,47 @@
+#!/bin/bash
+
+### BEGIN VARIABLES
+SCRIPT_DIR=$(cd -P `dirname ${BASH_SOURCE[0]}` && pwd)
+storageType=$1
+shareLoc=$2
+shareName=$3
+username=$4
+password=$5
+### END VARIABLES
+
+### BEGIN FUNCTIONS
+function mountSamba() {
+	local opts="sec=ntlm"
+	
+	if [ -n "$username" ]; then
+		opts="$opts,username=$username"
+		if [ -n "$password" ]; then
+			opts="$opts,password=$password"
+		fi
+	fi	
+
+	mount -t cifs -o $opts //${shareLoc}/${shareLoc} /images
+}
+
+function mountNFS() {
+	local opts="nolock,proto=tcp,intr,noatime,noexec"
+	mount -o $opts ${shareLoc}:${shareLoc} /images
+}
+### END FUNCTIONS
+
+if [ "$#" -lt "3" ]; then
+	echo "ERROR! Expecting at least three arguments!"
+	exit 1
+fi
+
+mkdir -p /images
+
+if [ "$storageType" = "1" ]; then
+	echo "Attempting to mount //${shareLoc}/${shareName}"
+	mountSamba
+elif [ "$storageType" = "2" ]; then
+	echo "Attempting to mount ${shareLoc}:${shareName}"
+	mountNFS
+fi
+
+echo "Mounting operation complete"
