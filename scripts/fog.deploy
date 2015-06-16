@@ -122,7 +122,7 @@ function deployPartTable() {
 	fi
 
 	# Restore raw partition table
-	dd if=$tableFile of=$diskName bs=512 count=${firstSector}
+	dd if=$tableFile of=$diskName bs=512
 
 	probeParts $diskName
 }
