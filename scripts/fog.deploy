@@ -61,7 +61,10 @@ function initSrc() {
 			echo "Imaging process cannot continue!"
 			exit 104
 		fi
-		local partList=`cat $partFile | grep start=`
+
+		local partList=`grep start= $partFile`
+		ORIG_IFS=$IFS
+		IFS=$'\n'
 		for part in $partList; do
 			local partName=`echo $part | awk -F'[ :,=]+' '{print $1}'`
 			local partID=`echo $part | awk -F'[ :,=]+' '{print $7}'`
@@ -75,6 +78,7 @@ function initSrc() {
 				fi
 			fi
 		done
+		IFS=$ORIG_IFS
 	done
 }
 
