@@ -22,7 +22,7 @@ function mountSamba() {
 		fi
 	fi	
 
-	mount -t cifs -o $opts //${shareLoc}/${shareLoc} /images
+	mount -t cifs -o $opts //${shareLoc}/${shareName} /images
 }
 
 function mountNFS() {
