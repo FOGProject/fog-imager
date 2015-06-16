@@ -5,6 +5,8 @@ SCRIPT_DIR=$(cd -P `dirname ${BASH_SOURCE[0]}` && pwd)
 storageType=$1
 shareLoc=$2
 shareName=$3
+# Use of username and password can be seen in process list
+# Do not use for anything other than read-only accounts
 username=$4
 password=$5
 ### END VARIABLES
