@@ -83,6 +83,10 @@ function savePartitions() {
 	local target=$1
 	local number=$2
 	local partDataList=`sfdisk -d $target | grep start=`
+	local swapFile="${destDir}/d${number}.swap"
+
+	# Clear or create swapFile before collecting data
+	echo -n "" > $swapFile
 
 	# Set IFS to newline for loop
 	ORIG_IFS=$IFS
@@ -111,8 +115,8 @@ function savePartitions() {
 			elif [[ "$partFs" =~ ^ext[234]$ ]]; then
 				runPartClone $partName extfs $partFile
 			elif [ "$partFs" == "swap" ]; then
-				local swapFile="${destDir}/d${number}.swap"
-				blkid -s UUID ${partName} | cut -d\" -f2 > $swapFile
+				local swapUUID="blkid -s UUID ${partName} | cut -d\" -f2"
+				echo "$partName $swapUUID" >> $swapFile
 			else
 				echo "FATAL: Unsupported partition "$partFs" detected!"
 				exit 2

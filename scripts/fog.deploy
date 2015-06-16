@@ -99,7 +99,9 @@ function deployPartition() {
 function processPartitions() {
 	local target=$1
 	local number=$2
+	# The partition table has been written. This is safe.
 	local partDataList=`sfdisk -d $target | grep start=`
+	local swapFile="${srcDir}/d${number}.swap"
 	
 	# Set IFS to newline for loop
 	ORIG_IFS=$IFS
@@ -112,8 +114,14 @@ function processPartitions() {
 			echo "Extended partition detected. This does nothing."
 		elif [ "$partID" == "82" ]; then
 			echo "Setting up swap partition with original UUID."
-			local swapUUID=`head ${srcDir}/d${number}.swap`
-			mkswap -U $swapUUID $partName
+			local swapUUID=`grep $partName $swapFile | cut -d' ' -f2`
+
+			if [ -n "$swapUUID" ]; then
+				mkswap -U $swapUUID $partName
+			else
+				echo "FATAL! Swap partition does not have a UUID!"
+				exit 5
+			fi
 		else
 			echo "Deploying $partName"
 			deployPartition ${srcDir}/d${number}p${partName##*[a-z]}.img ${partName}
