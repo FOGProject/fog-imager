@@ -18,12 +18,24 @@ PGIZ_COMP=5 # Compression value of 0-9 (5 is usually best)
 ### BEGIN FUNCTIONS
 function initDest() {
 	if [ -d $destDir ]; then
-		echo -e "\nFATAL! Destination directory \"${destDir}\" exists!"
-		echo "Drive(s) will not be copied!"
-		exit 1
-	else
-		mkdir -p $destDir
+		local dirPrompt="\nWARNING! Destination directory \"${destDir}\""
+		dirPrompt="${dirPrompt} exists!\nDo you want to overwrite this"
+		dirPrompt="${dirPrompt} directory with a new image?\nTHIS WILL"
+	   	dirPrompt="${dirPrompt} DESTROY THE EXISTING IMAGE! Press (y/n): "
+
+		echo -en "$dirPrompt"
+		read -r -n 1 answer
+		while [ "$answer" != "y" ] && [ "$answer" != "n" ]; do
+			echo -e "$dirPrompt"
+			read -r -n 1 answer
+			echo
+		done
+		if [ "$answer" = "n" ]; then
+			echo -e "Imaging halted by user\n"
+			exit 1
+		fi
 	fi
+	mkdir -p $destDir
 }
 
 function getDiskList() {
