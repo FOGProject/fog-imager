@@ -67,7 +67,7 @@ function initSrc() {
 			local partID=`echo $part | awk -F'[ :,=]+' '{print $7}'`
 
 			local partFile="d${dnum}p${partName##*[a-z]}.img"
-			if [ partID != "5" ] && [ $partID != "82" ]; then
+			if [ "$partID" != "5" ] && [ "$partID" != "82" ]; then
 				if [ ! -f "${srcDir}/$partFile" ]; then
 					echo -e "\nFATAL! No image file detected for ${partFile}!"
 					echo "Imaging process cannot continue!"
