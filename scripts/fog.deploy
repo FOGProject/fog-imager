@@ -62,9 +62,8 @@ function deployPartTable() {
 	local diskNum=$2
 	local sfdiskFile=${srcDir}/d${diskNum}.partitions
 
-	# Wipe partition table
-	# TODO - Consider wiping out slack space before first partition
-	dd if=/dev/zero of=$disk bs=512 count=1 2>/dev/null
+	# Wipe partition table and more than average slack space
+	dd if=/dev/zero of=$disk bs=512 count=4096 2>/dev/null
 
 	if [ -f "${srcDir}/d${diskNum}.mbr" ]; then
 		local tableFile=${srcDir}/d${diskNum}.mbr
