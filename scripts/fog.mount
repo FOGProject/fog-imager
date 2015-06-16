@@ -46,4 +46,8 @@ elif [ "$storageType" = "2" ]; then
 	mountNFS
 fi
 
-echo "Mounting operation complete"
+if [ "$?" != "0" ]; then
+	echo -e "\nMount unsuccessful: Return $?"
+else
+	echo -e "\nMounting operation complete"
+fi
