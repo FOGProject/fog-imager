@@ -13,8 +13,9 @@ FOG_BUILD="${FOG_DIR}/build"
 ISO_OUTPUT="-o ${FOG_BUILD}/fog-img.iso"
 ISO_FOPTS="-b isolinux/isolinux.bin -c isolinux/boot.cat"
 ISO_OPTS="-no-emul-boot -boot-load-size 4 -boot-info-table"
-ISO_BUILD_DIR="${FOG_DIR}/src/iso/build"
+ISO_BUILD_DIR="${FOG_BUILD}/iso"
 
+# TODO - We can do better than *
 BUILDROOT_IMAGES="${FOG_BUILD}/buildroot-*/output/images"
 ### END VARIABLES
 
@@ -27,12 +28,17 @@ fi
 
 # TODO - Download and build syslinux
 
-mkdir -p ${ISO_BUILD_DIR}/{images,kernel}
+if [ -d "${ISO_BUILD_DIR}" ]; then
+	rm -rf ${ISO_BUILD_DIR}
+fi
+
+mkdir -p ${ISO_BUILD_DIR}/{images,isolinux,kernel}
+cp ${FOG_DIR}/src/iso/isolinux/isolinux.cfg ${ISO_BUILD_DIR}/isolinux/
 # TODO - Move the following files from syslinux to isolinux directory
 	# cp ${FOG_BUILD}/syslinux-*/bios/com32/elflink/ldlinux/ldlinux.c32 ${ISO_BUILD_DIR}/isolinux/
 	# cp ${FOG_BUILD}/syslinux-*/bios/core/isolinux.bin ${ISO_BUILD_DIR}/isolinux/
 
-cp ${BUILDROOT_IMAGES}/bzImage ${BUILD_DIR}/kernel/bzImage
-cp ${BUILDROOT_IMAGES}/rootfs.ext2.xz ${BUILD_DIR}/images/fogimg.xz
+cp ${BUILDROOT_IMAGES}/bzImage ${ISO_BUILD_DIR}/kernel/bzImage
+cp ${BUILDROOT_IMAGES}/rootfs.ext2.xz ${ISO_BUILD_DIR}/images/fogimg.xz
 
 genisoimage $ISO_OUTPUT $ISO_FOPTS $ISO_OPTS $ISO_BUILD_DIR
