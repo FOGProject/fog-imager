@@ -19,4 +19,4 @@ tar -xzvf ${BUILDROOT_VERSION}.tar.gz
 cd $BUILDROOT_VERSION
 
 patch -p1 < ${BUILDROOT_DIR}/buildroot-fog.patch
-cp -Rv ${BUILDROOT_DIR}/{packages,system,configs,fog-imager*} ${FOG_BUILD}/${BUILDROOT_VERSION}
+cp -Rv ${BUILDROOT_DIR}/{package,system,configs,fog-imager*} ${FOG_BUILD}/${BUILDROOT_VERSION}
