@@ -6,6 +6,7 @@
 #               nasm.
 
 ### BEGIN VARIABLES
+ORIG_DIR=`pwd`
 SCRIPT_DIR="$(cd -P `dirname ${BASH_SOURCE[0]}` && pwd)"
 FOG_DIR="$(cd -P ${SCRIPT_DIR}/.. && pwd)"
 FOG_BUILD="${FOG_DIR}/build"
@@ -17,6 +18,9 @@ ISO_BUILD_DIR="${FOG_BUILD}/iso"
 
 # TODO - We can do better than *
 BUILDROOT_IMAGES="${FOG_BUILD}/buildroot-*/output/images"
+
+SYSLINUX_VERSION="syslinux-6.03"
+SYSLINUX_DL="https://www.kernel.org/pub/linux/utils/boot/syslinux/${SYSLINUX_VERSION}.tar.xz"
 ### END VARIABLES
 
 # Build syslinux
@@ -26,7 +30,12 @@ if [ ! -d "${FOG_BUILD}" ]; then
 	exit 1
 fi
 
-# TODO - Download and build syslinux
+# Download and build syslinux
+cd $FOG_BUILD
+wget $SYSLINUX_DL
+tar -Jxvf ${SYSLINUX_VERSION}.tar.xz
+cd ${SYSLINUX_VERSION}
+make
 
 if [ -d "${ISO_BUILD_DIR}" ]; then
 	rm -rf ${ISO_BUILD_DIR}
@@ -34,9 +43,11 @@ fi
 
 mkdir -p ${ISO_BUILD_DIR}/{images,isolinux,kernel}
 cp ${FOG_DIR}/src/iso/isolinux/isolinux.cfg ${ISO_BUILD_DIR}/isolinux/
-# TODO - Move the following files from syslinux to isolinux directory
-	# cp ${FOG_BUILD}/syslinux-*/bios/com32/elflink/ldlinux/ldlinux.c32 ${ISO_BUILD_DIR}/isolinux/
-	# cp ${FOG_BUILD}/syslinux-*/bios/core/isolinux.bin ${ISO_BUILD_DIR}/isolinux/
+# Move the following files from syslinux to isolinux directory
+	cp ${FOG_BUILD}/${SYSLINUX_VERSION}/bios/com32/elflink/ldlinux/ldlinux.c32 \
+		${ISO_BUILD_DIR}/isolinux/
+	cp ${FOG_BUILD}/${SYSLINUX_VERSION}/bios/core/isolinux.bin \
+		${ISO_BUILD_DIR}/isolinux/
 
 cp ${BUILDROOT_IMAGES}/bzImage ${ISO_BUILD_DIR}/kernel/bzImage
 cp ${BUILDROOT_IMAGES}/rootfs.ext2.xz ${ISO_BUILD_DIR}/images/fogimg.xz
