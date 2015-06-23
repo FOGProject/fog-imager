@@ -27,7 +27,7 @@ function mountSamba() {
 
 function mountNFS() {
 	local opts="nolock,proto=tcp,intr,noatime,noexec"
-	mount -o $opts ${shareLoc}:${shareLoc} /images
+	mount -o $opts ${shareLoc}:${shareName} /images
 }
 ### END FUNCTIONS
 
