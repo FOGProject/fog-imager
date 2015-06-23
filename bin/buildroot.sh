@@ -6,7 +6,7 @@ FOG_DIR="$(cd -P ${SCRIPT_DIR}/.. && pwd)"
 FOG_BUILD="${FOG_DIR}/build"
 
 BUILDROOT_VERSION="buildroot-2015.05"
-BUILDROOT_DL="http://buildroot.uclibc.org/downloads/buildroot-2015.05.tar.gz"
+BUILDROOT_DL="http://buildroot.uclibc.org/downloads/${BUILDROOT_VERSION}.tar.gz"
 BUILDROOT_DIR="${FOG_DIR}/src/buildroot"
 ### END VARIABLES
 

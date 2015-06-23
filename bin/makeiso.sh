@@ -16,8 +16,8 @@ ISO_FOPTS="-b isolinux/isolinux.bin -c isolinux/boot.cat"
 ISO_OPTS="-no-emul-boot -boot-load-size 4 -boot-info-table"
 ISO_BUILD_DIR="${FOG_BUILD}/iso"
 
-# TODO - We can do better than *
-BUILDROOT_IMAGES="${FOG_BUILD}/buildroot-*/output/images"
+BUILDROOT_VERSION="buildroot-2015.05"
+BUILDROOT_IMAGES="${FOG_BUILD}/${BUILDROOT_VERSION}/output/images"
 
 SYSLINUX_VERSION="syslinux-6.03"
 SYSLINUX_DL="https://www.kernel.org/pub/linux/utils/boot/syslinux/${SYSLINUX_VERSION}.tar.xz"
