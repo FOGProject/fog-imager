@@ -20,3 +20,13 @@ cd $BUILDROOT_VERSION
 
 patch -p1 < ${BUILDROOT_DIR}/buildroot-fog.patch
 cp -Rv ${BUILDROOT_DIR}/{package,system,configs,fog-imager*} ${FOG_BUILD}/${BUILDROOT_VERSION}
+
+# TODO - If x86_64
+  # cp -v ${FOG_BUILD}/${BUILDROOT_VERSION/{fog-imager.buildroot.config.64,.config}
+  # TODO - Replace BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE=""
+  # with: BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="${FOG_BUILD}/${BUILDROOT_VERSION}/configs/fog_x86_64_defconfig"
+# else
+  # cp -v ${FOG_BUILD}/${BUILDROOT_VERSION/{fog-imager.buildroot.config.32,.config}
+  # TODO - Replace BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE=""
+  # with: BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="${FOG_BUILD}/${BUILDROOT_VERSION}/configs/fog_x86_defconfig"
+# fi
