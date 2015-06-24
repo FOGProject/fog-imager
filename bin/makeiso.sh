@@ -31,10 +31,15 @@ if [ ! -d "${FOG_BUILD}" ]; then
 fi
 
 # Download and build syslinux
-cd $FOG_BUILD
-wget $SYSLINUX_DL
-tar -Jxvf ${SYSLINUX_VERSION}.tar.xz
-cd ${SYSLINUX_VERSION}
+if [ ! -d ${FOG_BUILD}/${SYSLINUX_VERSION} ]; then
+        cd $FOG_BUILD
+        wget $SYSLINUX_DL
+        tar -Jxvf ${SYSLINUX_VERSION}.tar.xz
+        cd ${SYSLINUX_VERSION}
+else
+        cd ${FOG_BUILD}/${SYSLINUX_VERSION}
+        make clean
+fi
 make
 
 if [ -d "${ISO_BUILD_DIR}" ]; then
