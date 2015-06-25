@@ -31,15 +31,16 @@ else
 	exit 2
 fi
 
-before="^BR_LINUX_KERNEL_CUSTOM_CONFIG_FILE=\"\"\$"
-after="BR_LINUX_KERNEL_CUSTOM_CONFIG_FILE=\"${defconfig}\""
-sedPat="s|${before}|${after}|g"
+confVar="BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="
+sedPat="s|^${confVar}\"\"\$|${confVar}\"${defconfig}\"|g"
 ### END DYNAMIC VARIABLES
 
 mkdir -p $FOG_BUILD
 cd $FOG_BUILD
 
-wget $BUILDROOT_DL
+if [ ! -f "$BUILDROOT_DL" ]; then
+	wget $BUILDROOT_DL
+fi
 tar -xzvf ${BUILDROOT_VERSION}.tar.gz
 
 cd $BUILDROOT_VERSION
@@ -49,5 +50,6 @@ patch -p1 < ${BUILDROOT_DIR}/buildroot-fog.patch
 cp -Rv ${BUILDROOT_DIR}/{package,system,configs,fog-imager*} ${FOG_BUILD}/${BUILDROOT_VERSION}
 
 # Modify buildroot config to point to correct defconfig
+
 sed -i $sedPat $brConfig
-cp -v ${FOG_BUILD}/${BUILDROOT_VERSION/{${brConfig},.config}
+cp -v ${FOG_BUILD}/${BUILDROOT_VERSION}/{${brConfig},.config}
