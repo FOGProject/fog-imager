@@ -1,1 +1,9 @@
+# Common editor files
 *.swp
+
+# /src/iso binaries
+isolinux.bin
+ldlinux.c32
+
+# Build directory
+/build

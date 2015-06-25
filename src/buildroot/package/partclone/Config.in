@@ -1,0 +1,12 @@
+config BR2_PACKAGE_PARTCLONE
+	bool "partclone"
+	select BR2_PACKAGE_XFSPROGS
+	select BR2_PACKAGE_NTFS_3G_NTFSPROGS
+	help
+	  Partclone
+	  The Free and Open Source Software for Partition Imaging and Cloning
+
+	  http://partclone.org
+
+comment "partclone requires a toolchain with LARGEFILE+WCHAR support"
+        depends on !(BR2_LARGEFILE && BR2_USE_WCHAR)

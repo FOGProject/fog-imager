@@ -1,0 +1,55 @@
+diff -rupN ../buildroot-2015.05/linux/linux.mk ./linux/linux.mk
+--- ../buildroot-2015.05/linux/linux.mk	2015-05-31 16:15:34.000000000 -0500
++++ ./linux/linux.mk	2015-06-18 17:46:53.766048544 -0500
+@@ -164,6 +164,7 @@ LINUX_IMAGE_PATH = $(KERNEL_ARCH_PATH)/b
+ endif # BR2_LINUX_KERNEL_VMLINUX
+ 
+ define LINUX_APPLY_LOCAL_PATCHES
++	git clone git://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git $(@D)/linux-firmware
+ 	for p in $(filter-out ftp://% http://% https://%,$(LINUX_PATCHES)) ; do \
+ 		if test -d $$p ; then \
+ 			$(APPLY_PATCHES) $(@D) $$p \*.patch || exit 1 ; \
+diff -rupN ../buildroot-2015.05/package/Config.in ./package/Config.in
+--- ../buildroot-2015.05/package/Config.in	2015-05-31 16:15:34.000000000 -0500
++++ ./package/Config.in	2015-06-18 17:55:47.261048532 -0500
+@@ -1,3 +1,8 @@
++menu "Packages for FOG"
++       source "package/partclone/Config.in"
++       source "package/pigz/Config.in"
++endmenu
++
+ menu "Target packages"
+ 
+ 	source "package/busybox/Config.in"
+diff -rupN ../buildroot-2015.05/package/gptfdisk/gptfdisk.hash ./package/gptfdisk/gptfdisk.hash
+--- ../buildroot-2015.05/package/gptfdisk/gptfdisk.hash	2015-05-31 16:15:34.000000000 -0500
++++ ./package/gptfdisk/gptfdisk.hash	2015-06-18 17:44:06.967047855 -0500
+@@ -1,3 +1,3 @@
+-# From http://sourceforge.net/projects/gptfdisk/files/gptfdisk/0.8.10/
+-md5	9cf4246c181c324bdbd553fe9b348373	gptfdisk-0.8.10.tar.gz
+-sha1	1708e232220236b6bdf299b315e9bc2205c01ba5	gptfdisk-0.8.10.tar.gz
++# From http://sourceforge.net/projects/gptfdisk/files/gptfdisk/1.0.0/
++md5	2061f917af084215898d4fea04d8388f	gptfdisk-1.0.0.tar.gz
++sha1	97f25db2def1c1939ed3954520bfd9948806d95a	gptfdisk-1.0.0.tar.gz
+diff -rupN ../buildroot-2015.05/package/gptfdisk/gptfdisk.mk ./package/gptfdisk/gptfdisk.mk
+--- ../buildroot-2015.05/package/gptfdisk/gptfdisk.mk	2015-05-31 16:15:34.000000000 -0500
++++ ./package/gptfdisk/gptfdisk.mk	2015-06-18 17:44:06.975047702 -0500
+@@ -4,14 +4,16 @@
+ #
+ ################################################################################
+ 
+-GPTFDISK_VERSION = 0.8.10
+-GPTFDISK_SITE = http://downloads.sourceforge.net/sourceforge/gptfdisk
++GPTFDISK_VERSION = 1.0.0
++GPTFDISK_SOURCE = gptfdisk-$(GPTFDISK_VERSION).tar.gz
++GPTFDISK_SITE = http://sourceforge.net/projects/gptfdisk/files/gptfdisk/$(GPTFDISK_VERSION)
+ GPTFDISK_LICENSE = GPLv2+
+ GPTFDISK_LICENSE_FILES = COPYING
+ 
+ GPTFDISK_TARGETS_$(BR2_PACKAGE_GPTFDISK_GDISK) += gdisk
+ GPTFDISK_TARGETS_$(BR2_PACKAGE_GPTFDISK_SGDISK) += sgdisk
+ GPTFDISK_TARGETS_$(BR2_PACKAGE_GPTFDISK_CGDISK) += cgdisk
++GPTFDISK_TARGETS_$(BR2_PACKAGE_GPTFDISK_FIXPARTS) += fixparts
+ 
+ GPTFDISK_DEPENDENCIES += util-linux
+ ifeq ($(BR2_PACKAGE_GPTFDISK_SGDISK),y)
