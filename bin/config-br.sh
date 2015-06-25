@@ -8,7 +8,33 @@ FOG_BUILD="${FOG_DIR}/build"
 BUILDROOT_VERSION="buildroot-2015.05"
 BUILDROOT_DL="http://buildroot.uclibc.org/downloads/${BUILDROOT_VERSION}.tar.gz"
 BUILDROOT_DIR="${FOG_DIR}/src/buildroot"
+
 ### END VARIABLES
+
+# Ensure one argument is provided
+if [ "$#" != "1" ]; then
+	echo "FATAL! Script $0 not provided with an argument."
+	exit 1
+fi
+
+### BEGIN DYNAMIC VARIABLES
+arch=$1
+
+if [ "$arch" = "64" ]; then
+	brConfig="fog-imager.buildroot.config.64"
+	defconfig="${FOG_BUILD}/${BUILDROOT_VERSION}/configs/fog_x86_64_defconfig"
+elif [ "$arch" != "32" ]; then
+	brConfig="fog-imager.buildroot.config.32"
+	defconfig="${FOG_BUILD}/${BUILDROOT_VERSION}/configs/fog_x86_defconfig"
+else
+	echo "FATAL! Script $0 expects "64" or "32" for argument."
+	exit 2
+fi
+
+before="^BR_LINUX_KERNEL_CUSTOM_CONFIG_FILE=\"\"\$"
+after="BR_LINUX_KERNEL_CUSTOM_CONFIG_FILE=\"${defconfig}\""
+sedPat="s|${before}|${after}|g"
+### END DYNAMIC VARIABLES
 
 mkdir -p $FOG_BUILD
 cd $FOG_BUILD
@@ -18,15 +44,10 @@ tar -xzvf ${BUILDROOT_VERSION}.tar.gz
 
 cd $BUILDROOT_VERSION
 
+# Apply updates to buildroot
 patch -p1 < ${BUILDROOT_DIR}/buildroot-fog.patch
 cp -Rv ${BUILDROOT_DIR}/{package,system,configs,fog-imager*} ${FOG_BUILD}/${BUILDROOT_VERSION}
 
-# TODO - If x86_64
-  # cp -v ${FOG_BUILD}/${BUILDROOT_VERSION/{fog-imager.buildroot.config.64,.config}
-  # TODO - Replace BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE=""
-  # with: BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="${FOG_BUILD}/${BUILDROOT_VERSION}/configs/fog_x86_64_defconfig"
-# else
-  # cp -v ${FOG_BUILD}/${BUILDROOT_VERSION/{fog-imager.buildroot.config.32,.config}
-  # TODO - Replace BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE=""
-  # with: BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="${FOG_BUILD}/${BUILDROOT_VERSION}/configs/fog_x86_defconfig"
-# fi
+# Modify buildroot config to point to correct defconfig
+sed -i $sedPat $brConfig
+cp -v ${FOG_BUILD}/${BUILDROOT_VERSION/{${brConfig},.config}
