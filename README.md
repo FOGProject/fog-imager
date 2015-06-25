@@ -2,16 +2,18 @@
 A FOG Project side project that will lead to 2.0 development.
 
 ## Requirements
-These scripts are built to be run on the FOG buildroot environment or a
-custom Arch Live disk used for testing. Both of these platforms provide:
+The scripts should be used with the buildroot environment that can be built
+with ./bin/config-br.sh. In order to use the scripts, they will need to be
+merged into the rootfs.ext.xz file before using ./bin/makeiso.sh (assuming
+you want to have an ISO). At this time, this is not automated in any way.
+
+If you spin your own test environment to try these scripts out, these programs
+will be needed:
 
 * gptfdisk
 * sfdisk
 * partclone
 * pigz
-
-If you spin your own test environment to try these scripts out, these programs
-will be needed.
 
 ## Storage
 There is now a script to mount SMB or NFS shares with ease: fog.mount
