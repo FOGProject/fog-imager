@@ -1,5 +1,5 @@
 # fog-imager
-A FOG Project side project that will lead to 2.0 development.
+A FOG Project 2.0 imaging submodule.
 
 ## Requirements
 The scripts should be used with the buildroot environment that can be built
@@ -28,7 +28,4 @@ only use it with read-only accounts. You've been warned!
 
 ## Additional Resources
 Check out the FOG Project at https://fogproject.org/ and see the latest
-development on fog-imager's parent project.
-
-Be sure to check out the FOG Project github as well:
-https://github.com/FOGProject/fogproject
+development on fog-too, the parent repository.
